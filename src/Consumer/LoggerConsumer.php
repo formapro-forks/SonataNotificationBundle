@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -45,7 +47,7 @@ class LoggerConsumer implements ConsumerInterface
             @trigger_error(
                 sprintf(
                     'Using an instance of "%s" is deprecated since version 2.3. Use Psr\Log\LoggerInterface instead.',
-                    get_class($logger)
+                    \get_class($logger)
                 ),
                 E_USER_DEPRECATED
             );
@@ -56,7 +58,7 @@ class LoggerConsumer implements ConsumerInterface
     /**
      * {@inheritdoc}
      */
-    public function process(ConsumerEvent $event)
+    public function process(ConsumerEvent $event): void
     {
         $message = $event->getMessage();
 

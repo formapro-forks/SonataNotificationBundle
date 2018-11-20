@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -33,7 +35,7 @@ class SwiftMailerConsumerTest extends TestCase
     /**
      * Initializes some dependencies used by tests.
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->mailer = $this->createMock('Swift_Mailer');
         $this->consumer = new SwiftMailerConsumer($this->mailer);
@@ -42,7 +44,7 @@ class SwiftMailerConsumerTest extends TestCase
     /**
      * Tests the sendEmail method.
      */
-    public function testSendEmail()
+    public function testSendEmail(): void
     {
         $message = new Message();
         $message->setBody([
@@ -71,6 +73,10 @@ class SwiftMailerConsumerTest extends TestCase
                 'text' => 'message text',
                 'html' => 'message html',
             ],
+            'attachment' => [
+                'file' => 'path to file',
+                'name' => 'file name',
+            ],
         ]);
 
         $mail = $this->createMock('Swift_Message');
@@ -92,6 +98,9 @@ class SwiftMailerConsumerTest extends TestCase
                 [$this->equalTo('message text'), $this->equalTo('text/plain')],
                 [$this->equalTo('message html'), $this->equalTo('text/html')]
             )
+            ->willReturnSelf();
+        $mail->expects($this->once())
+            ->method('attach')
             ->willReturnSelf();
 
         $this->mailer->expects($this->once())->method('createMessage')->will($this->returnValue($mail));

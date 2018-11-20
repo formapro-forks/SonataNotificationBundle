@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -12,8 +14,10 @@
 namespace Sonata\NotificationBundle\Tests\Consumer;
 
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Sonata\NotificationBundle\Consumer\ConsumerEvent;
 use Sonata\NotificationBundle\Consumer\LoggerConsumer;
+use Sonata\NotificationBundle\Exception\InvalidParameterException;
 use Sonata\NotificationBundle\Tests\Entity\Message;
 
 class LoggerConsumerTest extends TestCase
@@ -24,9 +28,9 @@ class LoggerConsumerTest extends TestCase
      * @param $type
      * @param $calledType
      */
-    public function testProcess($type, $calledType)
+    public function testProcess($type, $calledType): void
     {
-        $logger = $this->createMock('Psr\Log\LoggerInterface');
+        $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())->method($calledType);
 
         $message = new Message();
@@ -58,12 +62,11 @@ class LoggerConsumerTest extends TestCase
         ];
     }
 
-    /**
-     * @expectedException \Sonata\NotificationBundle\Exception\InvalidParameterException
-     */
-    public function testInvalidType()
+    public function testInvalidType(): void
     {
-        $logger = $this->createMock('Psr\Log\LoggerInterface');
+        $this->expectException(InvalidParameterException::class);
+
+        $logger = $this->createMock(LoggerInterface::class);
 
         $message = new Message();
         $message->setBody([

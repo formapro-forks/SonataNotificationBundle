@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -13,6 +15,7 @@ namespace Sonata\NotificationBundle\Tests\Iterator;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Sonata\NotificationBundle\Iterator\MessageManagerMessageIterator as Iterator;
+use Sonata\NotificationBundle\Model\Message;
 use Sonata\NotificationBundle\Tests\Entity\MessageManagerMock;
 
 /**
@@ -23,7 +26,7 @@ class MessageManagerMessageIterator extends Iterator
     public function __construct(ManagerRegistry $registry, $pause = 0, $batchSize = 10)
     {
         parent::__construct(
-            new MessageManagerMock('Sonata\NotificationBundle\Model\Message', $registry),
+            new MessageManagerMock(Message::class, $registry),
             [],
             $pause,
             $batchSize);
@@ -32,7 +35,7 @@ class MessageManagerMessageIterator extends Iterator
     /**
      * @param array $types
      */
-    public function _bufferize($types = [])
+    public function _bufferize($types = []): void
     {
         $this->bufferize($types);
     }

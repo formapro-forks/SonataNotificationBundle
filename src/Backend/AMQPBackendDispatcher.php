@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -113,7 +115,7 @@ final class AMQPBackendDispatcher extends QueueBackendDispatcher
 
         $default = null;
 
-        if (0 === count($this->queues)) {
+        if (0 === \count($this->queues)) {
             foreach ($this->backends as $backend) {
                 if ('default' === $backend['type']) {
                     return $backend['backend'];
@@ -145,7 +147,7 @@ final class AMQPBackendDispatcher extends QueueBackendDispatcher
     /**
      * {@inheritdoc}
      */
-    public function getIterator()
+    public function getIterator(): void
     {
         throw new \RuntimeException(
             'You need to use a specific rabbitmq backend supporting the selected queue to run a consumer.'
@@ -155,7 +157,7 @@ final class AMQPBackendDispatcher extends QueueBackendDispatcher
     /**
      * {@inheritdoc}
      */
-    public function handle(MessageInterface $message, EventDispatcherInterface $dispatcher)
+    public function handle(MessageInterface $message, EventDispatcherInterface $dispatcher): void
     {
         throw new \RuntimeException(
             'You need to use a specific rabbitmq backend supporting the selected queue to run a consumer.'
@@ -184,14 +186,14 @@ final class AMQPBackendDispatcher extends QueueBackendDispatcher
                 }
             }
 
-            if ($checked !== count($this->queues)) {
+            if ($checked !== \count($this->queues)) {
                 return new Failure(
                     'Not all queues for the available notification types registered in the rabbitmq broker. '
                     .'Are the consumer commands running?'
                 );
             }
 
-            if (count($missingConsumers) > 0) {
+            if (\count($missingConsumers) > 0) {
                 return new Failure(
                     'There are no rabbitmq consumers running for the queues: '.implode(', ', $missingConsumers)
                 );
@@ -206,14 +208,14 @@ final class AMQPBackendDispatcher extends QueueBackendDispatcher
     /**
      * {@inheritdoc}
      */
-    public function cleanup()
+    public function cleanup(): void
     {
         throw new \RuntimeException(
             'You need to use a specific rabbitmq backend supporting the selected queue to run a consumer.'
         );
     }
 
-    public function shutdown()
+    public function shutdown(): void
     {
         if ($this->context) {
             $this->context->close();
@@ -223,7 +225,7 @@ final class AMQPBackendDispatcher extends QueueBackendDispatcher
     /**
      * {@inheritdoc}
      */
-    public function initialize()
+    public function initialize(): void
     {
     }
 

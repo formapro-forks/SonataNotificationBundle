@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -16,14 +18,16 @@ use Sonata\AdminBundle\Datagrid\DatagridMapper;
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Route\RouteCollection;
 use Sonata\AdminBundle\Show\ShowMapper;
-use Sonata\DoctrineORMAdminBundle\Filter\ChoiceFilter;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 
 class MessageAdmin extends AbstractAdmin
 {
+    protected $classnameLabel = 'Message';
+
     /**
      * {@inheritdoc}
      */
-    public function configureRoutes(RouteCollection $collection)
+    public function configureRoutes(RouteCollection $collection): void
     {
         $collection
             ->remove('edit')
@@ -56,7 +60,7 @@ class MessageAdmin extends AbstractAdmin
     /**
      * {@inheritdoc}
      */
-    protected function configureShowFields(ShowMapper $showMapper)
+    protected function configureShowFields(ShowMapper $showMapper): void
     {
         $showMapper
             ->add('id')
@@ -73,7 +77,7 @@ class MessageAdmin extends AbstractAdmin
     /**
      * {@inheritdoc}
      */
-    protected function configureListFields(ListMapper $listMapper)
+    protected function configureListFields(ListMapper $listMapper): void
     {
         $listMapper
             ->addIdentifier('id', null, ['route' => ['name' => 'show']])
@@ -89,13 +93,13 @@ class MessageAdmin extends AbstractAdmin
     /**
      * {@inheritdoc}
      */
-    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+    protected function configureDatagridFilters(DatagridMapper $datagridMapper): void
     {
         $class = $this->getClass();
 
         $datagridMapper
             ->add('type')
-            ->add('state', null, [], ChoiceFilter::class, ['choices' => $class::getStateList()])
+            ->add('state', null, [], ChoiceType::class, ['choices' => $class::getStateList()])
         ;
     }
 }

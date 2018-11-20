@@ -2,6 +2,59 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.5.1](https://github.com/sonata-project/SonataNotificationBundle/compare/3.5.0...3.5.1) - 2018-05-25
+# Changed
+- Force use existing translation strings in breadcrumb for Message entity in Admin panel
+- `enqueue/amqp-lib` is an optional dependency now
+
+# Fixed
+- API and Admin services are only available when using Doctrine as a backend
+
+## [3.5.0](https://github.com/sonata-project/SonataNotificationBundle/compare/3.4.0...3.5.0) - 2018-04-26
+### Added
+- Added possibility to add an attachment to SwiftMailer Consumer
+
+### Fixed
+- Data fetched from stats counts are now properly manipulated (in case of doctrine backend is used)
+- Typo in message status
+
+## [3.4.0](https://github.com/sonata-project/SonataNotificationBundle/compare/3.3.1...3.4.0) - 2018-02-23
+### Changed
+- Require symfony/security-core instead of symfony/security
+- Refactored bundle configuration
+- Notification backend services are marked as public
+
+### Fixed
+- `each()` is deprecated since PHP 7.2
+- Remove var **definition** override
+- Commands not working on symfony4
+
+### Removed
+- Removed compatibility with older versions of FOSRestBundle (<2.1)
+
+## [3.3.1](https://github.com/sonata-project/SonataNotificationBundle/compare/3.3.0...3.3.1) - 2018-01-26
+### Changed
+- Auto-register all aliases as public
+- Auto-register consumer as public service
+ 
+### Fixed
+- `isRequired()` was removed since a default is specified
+- MessageAdmin loads correct ChoiceType for the state filter (instead of ChoiceFilter)
+
+## [3.3.0](https://github.com/sonata-project/SonataNotificationBundle/compare/3.2.0...3.3.0) - 2017-12-07
+### Added
+- Added Russian translations
+
+### Changed
+- Migrate from php-amqplib/php-amqplib to enqueue/amqp-lib package
+
+### Fixed
+- It is now allowed to install Symfony 4
+
+### Removed
+- Support for old versions of PHP and Symfony.
+- Support deprecations for old form alias usage
+
 ## [3.2.0](https://github.com/sonata-project/SonataNotificationBundle/compare/3.1.0...3.2.0) - 2017-09-14
 ### Added
 - Support for CC/BCC fields in `SwiftMailerConsumer`

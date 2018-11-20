@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -56,7 +58,7 @@ class ErroneousMessagesSelector
             'maxAttempts' => $maxAttempts,
         ];
 
-        if (count($types) > 0) {
+        if (\count($types) > 0) {
             $query->andWhere('m.type IN (:types)');
             $parameters['types'] = $types;
         }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -11,13 +13,20 @@
 
 namespace Sonata\NotificationBundle\Tests\Entity;
 
+use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Common\Persistence\Mapping\ClassMetadata;
+use Doctrine\ORM\AbstractQuery;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
+use Sonata\NotificationBundle\Entity\BaseMessage;
 use Sonata\NotificationBundle\Entity\MessageManager;
 use Sonata\NotificationBundle\Model\MessageInterface;
 
 class MessageManagerTest extends TestCase
 {
-    public function testCancel()
+    public function testCancel(): void
     {
         $manager = $this->getMessageManagerMock();
 
@@ -28,7 +37,7 @@ class MessageManagerTest extends TestCase
         $this->assertTrue($message->isCancelled());
     }
 
-    public function testRestart()
+    public function testRestart(): void
     {
         $manager = $this->getMessageManagerMock();
 
@@ -46,11 +55,11 @@ class MessageManagerTest extends TestCase
         $this->assertEquals(13, $newMessage->getRestartCount());
     }
 
-    public function testGetPager()
+    public function testGetPager(): void
     {
         $self = $this;
         $this
-            ->getMessageManager(function ($qb) use ($self) {
+            ->getMessageManager(function ($qb) use ($self): void {
                 $qb->expects($self->once())->method('getRootAliases')->will($self->returnValue(['m']));
                 $qb->expects($self->never())->method('andWhere');
                 $qb->expects($self->once())->method('setParameters')->with([]);
@@ -62,24 +71,23 @@ class MessageManagerTest extends TestCase
             ->getPager([], 1);
     }
 
-    /**
-     * @expectedException        \RuntimeException
-     * @expectedExceptionMessage Invalid sort field 'invalid' in 'Sonata\NotificationBundle\Entity\BaseMessage' class
-     */
-    public function testGetPagerWithInvalidSort()
+    public function testGetPagerWithInvalidSort(): void
     {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Invalid sort field \'invalid\' in \'Sonata\\NotificationBundle\\Entity\\BaseMessage\' class');
+
         $self = $this;
         $this
-            ->getMessageManager(function ($qb) use ($self) {
+            ->getMessageManager(function ($qb) use ($self): void {
             })
             ->getPager([], 1, 10, ['invalid' => 'ASC']);
     }
 
-    public function testGetPagerWithMultipleSort()
+    public function testGetPagerWithMultipleSort(): void
     {
         $self = $this;
         $this
-            ->getMessageManager(function ($qb) use ($self) {
+            ->getMessageManager(function ($qb) use ($self): void {
                 $qb->expects($self->once())->method('getRootAliases')->will($self->returnValue(['m']));
                 $qb->expects($self->never())->method('andWhere');
                 $qb->expects($self->once())->method('setParameters')->with([]);
@@ -101,11 +109,11 @@ class MessageManagerTest extends TestCase
             ]);
     }
 
-    public function testGetPagerWithOpenedMessages()
+    public function testGetPagerWithOpenedMessages(): void
     {
         $self = $this;
         $this
-            ->getMessageManager(function ($qb) use ($self) {
+            ->getMessageManager(function ($qb) use ($self): void {
                 $qb->expects($self->once())->method('getRootAliases')->will($self->returnValue(['m']));
                 $qb->expects($self->once())->method('andWhere')->with($self->equalTo('m.state = :state'));
                 $qb->expects($self->once())->method('setParameters')->with($self->equalTo([
@@ -115,11 +123,11 @@ class MessageManagerTest extends TestCase
             ->getPager(['state' => MessageInterface::STATE_OPEN], 1);
     }
 
-    public function testGetPagerWithCanceledMessages()
+    public function testGetPagerWithCanceledMessages(): void
     {
         $self = $this;
         $this
-            ->getMessageManager(function ($qb) use ($self) {
+            ->getMessageManager(function ($qb) use ($self): void {
                 $qb->expects($self->once())->method('getRootAliases')->will($self->returnValue(['m']));
                 $qb->expects($self->once())->method('andWhere')->with($self->equalTo('m.state = :state'));
                 $qb->expects($self->once())->method('setParameters')->with($self->equalTo([
@@ -129,11 +137,11 @@ class MessageManagerTest extends TestCase
             ->getPager(['state' => MessageInterface::STATE_CANCELLED], 1);
     }
 
-    public function testGetPagerWithInProgressMessages()
+    public function testGetPagerWithInProgressMessages(): void
     {
         $self = $this;
         $this
-            ->getMessageManager(function ($qb) use ($self) {
+            ->getMessageManager(function ($qb) use ($self): void {
                 $qb->expects($self->once())->method('getRootAliases')->will($self->returnValue(['m']));
                 $qb->expects($self->once())->method('andWhere')->with($self->equalTo('m.state = :state'));
                 $qb->expects($self->once())->method('setParameters')->with($self->equalTo([
@@ -144,24 +152,24 @@ class MessageManagerTest extends TestCase
     }
 
     /**
-     * @return \Sonata\NotificationBundle\Tests\Entity\MessageManagerMock
+     * @return MessageManagerMock
      */
     protected function getMessageManagerMock()
     {
-        $registry = $this->createMock('Doctrine\Common\Persistence\ManagerRegistry');
+        $registry = $this->createMock(ManagerRegistry::class);
 
-        $manager = new MessageManagerMock('Sonata\notificationBundle\Tests\Entity\Message', $registry);
+        $manager = new MessageManagerMock(Message::class, $registry);
 
         return $manager;
     }
 
     /**
-     * @return \Sonata\NotificationBundle\Entity\MessageManager
+     * @return MessageManager
      */
     protected function getMessageManager($qbCallback)
     {
         $query = $this->getMockForAbstractClass(
-            'Doctrine\ORM\AbstractQuery',
+            AbstractQuery::class,
             [],
             '',
             false,
@@ -171,8 +179,8 @@ class MessageManagerTest extends TestCase
         );
         $query->expects($this->any())->method('execute')->will($this->returnValue(true));
 
-        $qb = $this->getMockBuilder('Doctrine\ORM\QueryBuilder')
-            ->setConstructorArgs([$this->createMock('Doctrine\ORM\EntityManager')])
+        $qb = $this->getMockBuilder(QueryBuilder::class)
+            ->setConstructorArgs([$this->createMock(EntityManager::class)])
             ->getMock();
 
         $qb->expects($this->any())->method('select')->will($this->returnValue($qb));
@@ -180,27 +188,29 @@ class MessageManagerTest extends TestCase
 
         $qbCallback($qb);
 
-        $repository = $this->createMock('Doctrine\ORM\EntityRepository');
+        $repository = $this->createMock(EntityRepository::class);
         $repository->expects($this->any())->method('createQueryBuilder')->will($this->returnValue($qb));
 
-        $metadata = $this->createMock('Doctrine\Common\Persistence\Mapping\ClassMetadata');
+        $metadata = $this->createMock(ClassMetadata::class);
         $metadata->expects($this->any())->method('getFieldNames')->will($this->returnValue([
             'state',
             'type',
         ]));
 
-        $em = $this->createMock('Doctrine\ORM\EntityManager');
+        $em = $this->createMock(EntityManager::class);
         $em->expects($this->any())->method('getRepository')->will($this->returnValue($repository));
         $em->expects($this->any())->method('getClassMetadata')->will($this->returnValue($metadata));
 
-        $registry = $this->createMock('Doctrine\Common\Persistence\ManagerRegistry');
+        $registry = $this->createMock(ManagerRegistry::class);
         $registry->expects($this->any())->method('getManagerForClass')->will($this->returnValue($em));
 
-        return  new MessageManager('Sonata\NotificationBundle\Entity\BaseMessage', $registry);
+        return  new MessageManager(BaseMessage::class, $registry);
     }
 
     /**
-     * @return \Sonata\NotificationBundle\Tests\Entity\Message
+     * @param int $state
+     *
+     * @return Message
      */
     protected function getMessage($state = MessageInterface::STATE_OPEN)
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -68,7 +70,7 @@ class MessageManagerBackendDispatcher extends QueueBackendDispatcher
         }
 
         foreach ($this->backends as $backend) {
-            if (in_array($type, $backend['types'])) {
+            if (\in_array($type, $backend['types'])) {
                 return $backend['backend'];
             }
         }
@@ -79,7 +81,7 @@ class MessageManagerBackendDispatcher extends QueueBackendDispatcher
     /**
      * {@inheritdoc}
      */
-    public function getIterator()
+    public function getIterator(): void
     {
         throw new \RuntimeException('You need to use a specific doctrine backend supporting the selected queue to run a consumer.');
     }
@@ -87,7 +89,7 @@ class MessageManagerBackendDispatcher extends QueueBackendDispatcher
     /**
      * {@inheritdoc}
      */
-    public function handle(MessageInterface $message, EventDispatcherInterface $dispatcher)
+    public function handle(MessageInterface $message, EventDispatcherInterface $dispatcher): void
     {
         throw new \RuntimeException('You need to use a specific doctrine backend supporting the selected queue to run a consumer.');
     }
@@ -97,13 +99,13 @@ class MessageManagerBackendDispatcher extends QueueBackendDispatcher
      */
     public function getStatus()
     {
-        return new Success('Channel is running (RabbitMQ) and consumers for all queues available.');
+        return new Success('Channel is running (Database) and consumers for all queues available.');
     }
 
     /**
      * {@inheritdoc}
      */
-    public function cleanup()
+    public function cleanup(): void
     {
         throw new \RuntimeException('You need to use a specific doctrine backend supporting the selected queue to run a consumer.');
     }
@@ -111,7 +113,7 @@ class MessageManagerBackendDispatcher extends QueueBackendDispatcher
     /**
      * {@inheritdoc}
      */
-    public function initialize()
+    public function initialize(): void
     {
     }
 

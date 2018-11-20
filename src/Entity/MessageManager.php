@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -23,7 +25,7 @@ class MessageManager extends BaseEntityManager implements MessageManagerInterfac
     /**
      * {@inheritdoc}
      */
-    public function save($message, $andFlush = true)
+    public function save($message, $andFlush = true): void
     {
         //Hack for ConsumerHandlerCommand->optimize()
         if ($message->getId() && !$this->em->getUnitOfWork()->isInIdentityMap($message)) {
@@ -87,7 +89,7 @@ class MessageManager extends BaseEntityManager implements MessageManagerInterfac
             MessageInterface::STATE_OPEN => 0,
         ];
 
-        foreach ($stm->fetch() as $data) {
+        while ($data = $stm->fetch()) {
             $states[$data['state']] = $data['cnt'];
         }
 
@@ -97,7 +99,7 @@ class MessageManager extends BaseEntityManager implements MessageManagerInterfac
     /**
      * {@inheritdoc}
      */
-    public function cleanup($maxAge)
+    public function cleanup($maxAge): void
     {
         $tableName = $this->getEntityManager()->getClassMetadata($this->class)->table['name'];
 
@@ -117,7 +119,7 @@ class MessageManager extends BaseEntityManager implements MessageManagerInterfac
     /**
      * {@inheritdoc}
      */
-    public function cancel(MessageInterface $message, $force = false)
+    public function cancel(MessageInterface $message, $force = false): void
     {
         if (($message->isRunning() || $message->isError()) && !$force) {
             return;
@@ -157,11 +159,11 @@ class MessageManager extends BaseEntityManager implements MessageManagerInterfac
 
         $fields = $this->getEntityManager()->getClassMetadata($this->class)->getFieldNames();
         foreach ($sort as $field => $direction) {
-            if (!in_array($field, $fields)) {
+            if (!\in_array($field, $fields)) {
                 throw new \RuntimeException(sprintf("Invalid sort field '%s' in '%s' class", $field, $this->class));
             }
         }
-        if (0 == count($sort)) {
+        if (0 == \count($sort)) {
             $sort = ['type' => 'ASC'];
         }
         foreach ($sort as $field => $direction) {
@@ -208,7 +210,7 @@ class MessageManager extends BaseEntityManager implements MessageManagerInterfac
 
         $parameters['state'] = $state;
 
-        if (count($types) > 0) {
+        if (\count($types) > 0) {
             if (array_key_exists('exclude', $types) || array_key_exists('include', $types)) {
                 if (array_key_exists('exclude', $types)) {
                     $query->andWhere('m.type NOT IN (:exclude)');

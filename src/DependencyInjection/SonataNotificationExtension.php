@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -12,8 +14,11 @@
 namespace Sonata\NotificationBundle\DependencyInjection;
 
 use Sonata\EasyExtendsBundle\Mapper\DoctrineCollector;
+use Sonata\NotificationBundle\Backend\AMQPBackend;
+use Sonata\NotificationBundle\Backend\MessageManagerBackend;
 use Sonata\NotificationBundle\Model\MessageInterface;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader;
@@ -30,51 +35,57 @@ class SonataNotificationExtension extends Extension
     /**
      * {@inheritdoc}
      */
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
 
+        $this->checkConfiguration($config);
+
         /*
          * NEXT_MAJOR: Remove the check for ServiceClosureArgument as well as core_legacy.xml.
          */
-        if (class_exists('Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument')) {
+        if (class_exists(ServiceClosureArgument::class)) {
             $loader->load('core.xml');
         } else {
             $loader->load('core_legacy.xml');
         }
 
-        $loader->load('doctrine_orm.xml');
         $loader->load('backend.xml');
         $loader->load('consumer.xml');
-        $loader->load('selector.xml');
-        $loader->load('event.xml');
-
-        if ($config['consumers']['register_default']) {
-            $loader->load('default_consumers.xml');
-        }
+        $loader->load('command.xml');
 
         $bundles = $container->getParameter('kernel.bundles');
 
-        if (isset($bundles['FOSRestBundle']) && isset($bundles['NelmioApiDocBundle'])) {
-            $loader->load('api_controllers.xml');
-            $loader->load('api_form.xml');
+        if ('sonata.notification.backend.doctrine' === $config['backend']) {
+            $loader->load('doctrine_orm.xml');
+            $loader->load('selector.xml');
+            $loader->load('event.xml');
+
+            if (isset($bundles['FOSRestBundle'], $bundles['NelmioApiDocBundle'])) {
+                $loader->load('api_controllers.xml');
+                $loader->load('api_form.xml');
+            }
+
+            // for now, only support for ORM
+            if ($config['admin']['enabled'] && isset($bundles['SonataDoctrineORMAdminBundle'])) {
+                $loader->load('admin.xml');
+            }
         }
 
-        // for now, only support for ORM
-        if ($config['admin']['enabled'] && isset($bundles['SonataDoctrineORMAdminBundle'])) {
-            $loader->load('admin.xml');
+        if ($config['consumers']['register_default']) {
+            $loader->load('default_consumers.xml');
         }
 
         if (isset($bundles['LiipMonitorBundle'])) {
             $loader->load('checkmonitor.xml');
         }
 
-        $this->checkConfiguration($config);
-
         $container->setAlias('sonata.notification.backend', $config['backend']);
+        // NEXT_MAJOR: remove this getter when requiring sf3.4+
+        $container->getAlias('sonata.notification.backend')->setPublic(true);
         $container->setParameter('sonata.notification.backend', $config['backend']);
 
         $this->registerDoctrineMapping($config);
@@ -89,7 +100,7 @@ class SonataNotificationExtension extends Extension
      * @param ContainerBuilder $container
      * @param array            $config
      */
-    public function configureClass(ContainerBuilder $container, $config)
+    public function configureClass(ContainerBuilder $container, $config): void
     {
         // admin configuration
         $container->setParameter('sonata.notification.admin.message.entity', $config['class']['message']);
@@ -102,7 +113,7 @@ class SonataNotificationExtension extends Extension
      * @param ContainerBuilder $container
      * @param array            $config
      */
-    public function configureAdmin(ContainerBuilder $container, $config)
+    public function configureAdmin(ContainerBuilder $container, $config): void
     {
         $container->setParameter('sonata.notification.admin.message.class', $config['admin']['message']['class']);
         $container->setParameter('sonata.notification.admin.message.controller', $config['admin']['message']['controller']);
@@ -113,7 +124,7 @@ class SonataNotificationExtension extends Extension
      * @param ContainerBuilder $container
      * @param array            $config
      */
-    public function registerParameters(ContainerBuilder $container, $config)
+    public function registerParameters(ContainerBuilder $container, $config): void
     {
         $container->setParameter('sonata.notification.message.class', $config['class']['message']);
         $container->setParameter('sonata.notification.admin.message.entity', $config['class']['message']);
@@ -123,15 +134,10 @@ class SonataNotificationExtension extends Extension
      * @param ContainerBuilder $container
      * @param array            $config
      */
-    public function configureBackends(ContainerBuilder $container, $config)
+    public function configureBackends(ContainerBuilder $container, $config): void
     {
-        // set the default value, will be erase if required
-        $container->setAlias('sonata.notification.manager.message', 'sonata.notification.manager.message.default');
-
         if (isset($config['backends']['rabbitmq']) && 'sonata.notification.backend.rabbitmq' === $config['backend']) {
             $this->configureRabbitmq($container, $config);
-
-            $container->removeDefinition('sonata.notification.backend.doctrine');
         } else {
             $container->removeDefinition('sonata.notification.backend.rabbitmq');
         }
@@ -150,13 +156,18 @@ class SonataNotificationExtension extends Extension
             $container->setAlias('sonata.notification.manager.message', $config['backends']['doctrine']['message_manager']);
 
             $this->configureDoctrineBackends($container, $config, $checkLevel, $pause, $maxAge, $batchSize);
+
+            // NEXT_MAJOR: remove this getter when requiring sf3.4+
+            $container->getAlias('sonata.notification.manager.message')->setPublic(true);
+        } else {
+            $container->removeDefinition('sonata.notification.backend.doctrine');
         }
     }
 
     /**
      * @param array $config
      */
-    public function registerDoctrineMapping(array $config)
+    public function registerDoctrineMapping(array $config): void
     {
         $collector = DoctrineCollector::getInstance();
 
@@ -172,9 +183,9 @@ class SonataNotificationExtension extends Extension
     /**
      * @param array $config
      */
-    protected function checkConfiguration(array $config)
+    protected function checkConfiguration(array $config): void
     {
-        if (isset($config['backends']) && count($config['backends']) > 1) {
+        if (isset($config['backends']) && \count($config['backends']) > 1) {
             throw new \RuntimeException('more than one backend configured, you can have only one backend configuration');
         }
 
@@ -191,21 +202,22 @@ class SonataNotificationExtension extends Extension
      * @param ContainerBuilder $container
      * @param array            $config
      */
-    protected function configureListeners(ContainerBuilder $container, array $config)
+    protected function configureListeners(ContainerBuilder $container, array $config): void
     {
         $ids = $config['iteration_listeners'];
 
-        // this one clean the unit of work after every iteration
-        // it must be set on any backend ...
-        $ids[] = 'sonata.notification.event.doctrine_optimize';
+        if ('sonata.notification.backend.doctrine' === $config['backend']) {
+            // this one clean the unit of work after every iteration
+            $ids[] = 'sonata.notification.event.doctrine_optimize';
 
-        if (isset($config['backends']['doctrine']) && $config['backends']['doctrine']['batch_size'] > 1) {
-            // if the backend is doctrine and the batch size > 1, then
-            // the unit of work must be cleaned wisely to avoid any issue
-            // while persisting entities
-            $ids = [
-                'sonata.notification.event.doctrine_backend_optimize',
-            ];
+            if ($config['backends']['doctrine']['batch_size'] > 1) {
+                // if the backend is doctrine and the batch size > 1, then
+                // the unit of work must be cleaned wisely to avoid any issue
+                // while persisting entities
+                $ids = [
+                    'sonata.notification.event.doctrine_backend_optimize',
+                ];
+            }
         }
 
         $container->setParameter('sonata.notification.event.iteration_listeners', $ids);
@@ -221,7 +233,7 @@ class SonataNotificationExtension extends Extension
      *
      * @throws \RuntimeException
      */
-    protected function configureDoctrineBackends(ContainerBuilder $container, array $config, $checkLevel, $pause, $maxAge, $batchSize)
+    protected function configureDoctrineBackends(ContainerBuilder $container, array $config, $checkLevel, $pause, $maxAge, $batchSize): void
     {
         $queues = $config['queues'];
         $qBackends = [];
@@ -229,7 +241,7 @@ class SonataNotificationExtension extends Extension
         $definition = $container->getDefinition('sonata.notification.backend.doctrine');
 
         // no queue defined, set a default one
-        if (0 == count($queues)) {
+        if (0 == \count($queues)) {
             $queues = [[
                 'queue' => 'default',
                 'default' => true,
@@ -241,14 +253,14 @@ class SonataNotificationExtension extends Extension
         $declaredQueues = [];
 
         foreach ($queues as $pos => &$queue) {
-            if (in_array($queue['queue'], $declaredQueues)) {
+            if (\in_array($queue['queue'], $declaredQueues)) {
                 throw new \RuntimeException('The doctrine backend does not support 2 identicals queue name, please rename one queue');
             }
 
             $declaredQueues[] = $queue['queue'];
 
             // make the configuration compatible with old code and rabbitmq
-            if (isset($queue['routing_key']) && strlen($queue['routing_key']) > 0) {
+            if (isset($queue['routing_key']) && \strlen($queue['routing_key']) > 0) {
                 $queue['types'] = [$queue['routing_key']];
             }
 
@@ -307,7 +319,7 @@ class SonataNotificationExtension extends Extension
             $id = 'sonata.notification.backend.doctrine.'.$key;
         }
 
-        $definition = new Definition('Sonata\NotificationBundle\Backend\MessageManagerBackend', [$manager, $checkLevel, $pause, $maxAge, $batchSize, $types]);
+        $definition = new Definition(MessageManagerBackend::class, [$manager, $checkLevel, $pause, $maxAge, $batchSize, $types]);
         $definition->setPublic(false);
 
         $container->setDefinition($id, $definition);
@@ -319,14 +331,14 @@ class SonataNotificationExtension extends Extension
      * @param ContainerBuilder $container
      * @param array            $config
      */
-    protected function configureRabbitmq(ContainerBuilder $container, array $config)
+    protected function configureRabbitmq(ContainerBuilder $container, array $config): void
     {
         $queues = $config['queues'];
         $connection = $config['backends']['rabbitmq']['connection'];
         $baseExchange = $config['backends']['rabbitmq']['exchange'];
         $amqBackends = [];
 
-        if (0 == count($queues)) {
+        if (0 == \count($queues)) {
             $queues = [[
                 'queue' => 'default',
                 'default' => true,
@@ -343,7 +355,7 @@ class SonataNotificationExtension extends Extension
         $routingKeys = $this->getQueuesParameters('routing_key', $queues);
 
         foreach ($deadLetterRoutingKeys as $key) {
-            if (!in_array($key, $routingKeys)) {
+            if (!\in_array($key, $routingKeys)) {
                 throw new \RuntimeException(sprintf(
                     'You must configure the queue having the routing_key "%s" same as dead_letter_routing_key', $key
                 ));
@@ -354,21 +366,21 @@ class SonataNotificationExtension extends Extension
 
         $defaultSet = false;
         foreach ($queues as $pos => $queue) {
-            if (in_array($queue['queue'], $declaredQueues)) {
+            if (\in_array($queue['queue'], $declaredQueues)) {
                 throw new \RuntimeException('The RabbitMQ backend does not support 2 identicals queue name, please rename one queue');
             }
 
             $declaredQueues[] = $queue['queue'];
 
             if ($queue['dead_letter_routing_key']) {
-                if (is_null($queue['dead_letter_exchange'])) {
+                if (null === $queue['dead_letter_exchange']) {
                     throw new \RuntimeException(
                         'dead_letter_exchange must be configured when dead_letter_routing_key is set'
                     );
                 }
             }
 
-            if (in_array($queue['routing_key'], $deadLetterRoutingKeys)) {
+            if (\in_array($queue['routing_key'], $deadLetterRoutingKeys)) {
                 $exchange = $this->getAMQPDeadLetterExchangeByRoutingKey($queue['routing_key'], $queues);
             } else {
                 $exchange = $baseExchange;
@@ -430,7 +442,7 @@ class SonataNotificationExtension extends Extension
         $id = 'sonata.notification.backend.rabbitmq.'.$this->amqpCounter++;
 
         $definition = new Definition(
-            'Sonata\NotificationBundle\Backend\AMQPBackend',
+            AMQPBackend::class,
             [
                 $exchange,
                 $name,

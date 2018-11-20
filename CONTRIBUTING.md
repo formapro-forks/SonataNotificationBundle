@@ -72,15 +72,32 @@ and run this command before committing your modifications:
 php-cs-fixer fix --verbose
 ```
 
+Please note that we try to keep phpdoc to a minimum, so if an `@param` phpdoc
+comment brings nothing more than the type hint and variable name already do,
+it should be removed. Descriptions are optional if you want to document a type.
+
+```php
+/**
+ * @param Bar|Baz $foo
+ * @param int     $limit a crucial, highly interesting comment
+ */
+protected function bar($foo, string $name, int $limit)
+{
+    // ...
+}
+```
+
+Please also note that multiline signatures are allowed when the line is longer than 120 characters.
+
 #### The documentation
 
-The documentation is mostly written with the `rst` format, and can be found in the `Resources/doc` directory.
+The documentation is mostly written with the `rst` format, and can be found in the `docs` directory.
 You can test the doc rendering with the `make docs` command, but to do this, you will need [Sphinx][sphinx_install].
 Just like php dependencies can be managed with Composer, python dependencies can be managed with [pip][pip_install].
 To get sphinx, simply run the following command.
 
 ```bash
-pip install --requirement Resources/doc/requirements.txt --user
+pip install --requirement docs/requirements.txt --user
 ```
 
 Some python binaries should be downloaded to `~/.local/bin` for Linux or `~/Library/Python/2.7/bin` for Mac OS,
@@ -90,7 +107,7 @@ so that it contains this path and then, from the root of the project, run `make 
 If `make docs` is successful, you should be able to see your modifications:
 
 ```bash
-$YOUR_FAVORITE_BROWSER Resources/doc/_build/html/index.html
+$YOUR_FAVORITE_BROWSER docs/_build/html/index.html
 ```
 
 If your PR contains a new feature, you must add documentation for it.

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the Sonata Project package.
  *
@@ -27,7 +29,7 @@ class ConsumerHandlerCommand extends ContainerAwareCommand
     /**
      * {@inheritdoc}
      */
-    public function configure()
+    public function configure(): void
     {
         $this->setName('sonata:notification:start');
         $this->setDescription('Listen for incoming messages');
@@ -39,7 +41,7 @@ class ConsumerHandlerCommand extends ContainerAwareCommand
     /**
      * {@inheritdoc}
      */
-    public function execute(InputInterface $input, OutputInterface $output)
+    public function execute(InputInterface $input, OutputInterface $output): void
     {
         $startDate = new \DateTime();
 
@@ -50,11 +52,11 @@ class ConsumerHandlerCommand extends ContainerAwareCommand
                 if (!$listener[0] instanceof ConsumerInterface) {
                     throw new \RuntimeException(sprintf(
                         'The registered service does not implement the ConsumerInterface (class=%s',
-                        get_class($listener[0])
+                        \get_class($listener[0])
                     ));
                 }
 
-                $output->writeln(sprintf('   > %s', get_class($listener[0])));
+                $output->writeln(sprintf('   > %s', \get_class($listener[0])));
             }
         }
 
@@ -76,13 +78,13 @@ class ConsumerHandlerCommand extends ContainerAwareCommand
             $output->writeln(sprintf(
                 '[%s] <info>Starting the backend handler</info> - %s',
                 $startDate->format('r'),
-                get_class($backend)
+                \get_class($backend)
             ));
         } else {
             $output->writeln(sprintf(
                 '[%s] <info>Starting the backend handler</info> - %s (type: %s)',
                 $startDate->format('r'),
-                get_class($backend),
+                \get_class($backend),
                 $type
             ));
         }
@@ -151,11 +153,11 @@ class ConsumerHandlerCommand extends ContainerAwareCommand
      *
      * @throws \RuntimeException
      */
-    protected function throwTypeNotFoundException($type, $backend)
+    protected function throwTypeNotFoundException($type, $backend): void
     {
         throw new \RuntimeException(
             "The requested backend for the type '".$type." 'does not exist. \nMake sure the backend '".
-            get_class($backend)."' \nsupports multiple queues and the routing_key is defined. (Currently rabbitmq only)"
+            \get_class($backend)."' \nsupports multiple queues and the routing_key is defined. (Currently rabbitmq only)"
         );
     }
 
